@@ -1,10 +1,10 @@
-# 📚 rmrl-tanglish
+# rmrl-tanglish
 
 **Sandhi-aware, phonetic Tanglish transliterator built specifically for the Roja Muthiah Research Library (RMRL) digital preservation collection.**
 
 ---
 
-## 🎯 The Problem with Standard Tamil Transliteration
+The Problem with Standard Tamil Transliteration:
 
 Standard Python transliterators (`open-tamil`, `aksharamukha`, `tamil-toolkit`, `indic-transliteration`) follow strict orthographic or academic rules (like ISO-15919 or keyboard mappings). 
 
@@ -25,7 +25,7 @@ When applied to 18th–20th century classical Tamil literature and Siddha medica
 
 ---
 
-## ⚡ Features
+## Features
 
 - **Sandhi Disassembler (புணர்ச்சி பிரிப்பான்):** Automatically unlinks compound titles and removes joining stops (`க், ச், த், ப்`).
 - **Allophonic Voicing Engine:** Accurately voices intervocalic stops and homorganic nasal clusters (`ங்க` $\rightarrow$ `ng`, `ஞ்ச` $\rightarrow$ `nj`, `ண்ட` $\rightarrow$ `nd`, `ந்த` $\rightarrow$ `ndh`, `ம்ப` $\rightarrow$ `mb`).
@@ -34,7 +34,7 @@ When applied to 18th–20th century classical Tamil literature and Siddha medica
 
 ---
 
-## 💻 Quickstart
+## Quickstart
 
 ```python
 from rmrl_tanglish import to_tanglish
@@ -47,16 +47,3 @@ epic = "மகாபாரதம்"
 print(to_tanglish(epic))
 # Output: Mahabharatham
 ```
-
----
-
-## 🛠️ Testing
-
-```bash
-python tests/test_classical_titles.py
-```
-
----
-
-## 📜 License
-MIT License. Preserved for the global Tamil research community by [KalvettuByte](https://github.com/KalvettuByte).
