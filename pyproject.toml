@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rmrl-tanglish"
+version = "0.1.0"
+description = "Sandhi-aware phonetic Tanglish transliterator specialized for classical literature and the Roja Muthiah Research Library (RMRL) archive."
+readme = "README.md"
+authors = [
+    { name = "KalvettuByte" }
+]
+license = { text = "MIT" }
+keywords = ["tamil", "tanglish", "transliteration", "rmrl", "sandhi", "archives"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Text Processing :: Linguistic"
+]
+requires-python = ">=3.9"
+
+[project.urls]
+Homepage = "https://github.com/KalvettuByte/rmrl-tanglish"
+Issues = "https://github.com/KalvettuByte/rmrl-tanglish/issues"
