@@ -7,8 +7,8 @@ Gemination preservation, and Grantha phonology).
 import re
 from .utils import split_tamil_letters, UYIR, VOWEL_SIGNS, MEI_BASES
 
-# Consonants with positional allophones
 STOPS = {'க', 'ச', 'ட', 'த', 'ப', 'ற'}
+NASALS = {'ங', 'ஞ', 'ண', 'ந', 'ம', 'ன'}
 
 def transliterate_token(token: str) -> str:
     """
@@ -17,7 +17,6 @@ def transliterate_token(token: str) -> str:
     if not token:
         return ''
         
-    # If the token is already ASCII (digits, punctuation, English), keep as is
     if token.isascii():
         return token
         
@@ -26,6 +25,15 @@ def transliterate_token(token: str) -> str:
     out = []
     
     for i, char in enumerate(letters):
+        # 0. Non-Tamil characters (spaces, punctuation, digits, ASCII)
+        if char == 'ஸ்ரீ':
+            out.append('Sri ')
+            continue
+            
+        if not ('\u0B80' <= char[0] <= '\u0BFF'):
+            out.append(char)
+            continue
+            
         # 1. Pure Independent Vowels (அ, ஆ, etc.)
         if char in UYIR:
             out.append(UYIR[char])
@@ -39,40 +47,32 @@ def transliterate_token(token: str) -> str:
         # 3. Pure Consonants with Pulli (க், ச், த், etc.)
         if len(char) == 2 and char[1] == '\u0BCD':
             base = char[0]
-            # Look ahead for gemination or homorganic nasal clusters
             next_char = letters[i+1] if i + 1 < n else ''
             
-            # Nasal + Stop clustering:
-            # ங் + க -> ng
-            if base == 'ங' and next_char.startswith('க'):
-                out.append('ng')
-            # ஞ் + ச -> nj
-            elif base == 'ஞ' and next_char.startswith('ச'):
-                out.append('nj')
-            # ண் + ட -> nd
-            elif base == 'ண' and next_char.startswith('ட'):
-                out.append('nd')
-            # ந் + த -> ndh
-            elif base == 'ந' and next_char.startswith('த'):
-                out.append('ndh')
-            # ம் + ப -> mb
-            elif base == 'ம' and next_char.startswith('ப'):
-                out.append('mb')
-            # Geminate stops: க்+க -> k, ச்+ச -> c, ட்+ட -> t, த்+த -> th, ப்+ப -> p
-            elif base == 'க' and next_char.startswith('க'):
+            # Nasals before corresponding stops:
+            if base in NASALS:
+                if base == 'ங':
+                    out.append('ng')
+                elif base == 'ம':
+                    out.append('m')
+                else:
+                    out.append('n')
+                continue
+                
+            # Geminate stops: க்+க -> k, ச்+ச -> ch, ட்+ட -> t, த்+த -> t, ப்+ப -> p
+            if base == 'க' and next_char.startswith('க'):
                 out.append('k')
             elif base == 'ச' and next_char.startswith('ச'):
                 out.append('ch')
             elif base == 'ட' and next_char.startswith('ட'):
                 out.append('t')
             elif base == 'த' and next_char.startswith('த'):
-                out.append('t')  # will combine with 'th' to form 'tth' or smooth to 'th'
+                out.append('t')
             elif base == 'ப' and next_char.startswith('ப'):
                 out.append('p')
             elif base == 'ற' and next_char.startswith('ற'):
-                out.append('tt')  # ற்ற -> ttr
+                out.append('tt')
             else:
-                # Regular coda consonant
                 mei_map = {
                     'க': 'k', 'ங': 'ng', 'ச': 's', 'ஞ': 'gn', 'ட': 't', 'ண': 'n',
                     'த': 'th', 'ந': 'n', 'ப': 'p', 'ம': 'm', 'ய': 'y', 'ர': 'r',
@@ -87,20 +87,18 @@ def transliterate_token(token: str) -> str:
         vowel_part = char[1:] if len(char) > 1 else ''
         vowel_latin = VOWEL_SIGNS.get(vowel_part, 'a')
         
-        # Determine allophonic voicing for the consonant
         prev_is_vowel = (i > 0 and (letters[i-1] in UYIR or (len(letters[i-1]) == 1 and letters[i-1] in MEI_BASES) or (len(letters[i-1]) == 2 and letters[i-1][1] in VOWEL_SIGNS)))
-        prev_is_nasal_pulli = (i > 0 and len(letters[i-1]) == 2 and letters[i-1][1] == '\u0BCD' and letters[i-1][0] in {'ங', 'ஞ', 'ண', 'ந', 'ம', 'ன'})
+        prev_is_nasal_pulli = (i > 0 and len(letters[i-1]) == 2 and letters[i-1][1] == '\u0BCD' and letters[i-1][0] in NASALS)
         prev_is_stop_pulli = (i > 0 and len(letters[i-1]) == 2 and letters[i-1][1] == '\u0BCD' and letters[i-1][0] in STOPS)
         
         cons_latin = MEI_BASES.get(base_cons, base_cons)
         
         # Rule A: Velar /k/ (க)
         if base_cons == 'க':
-            # After nasal (ங்) -> already handled as 'ng' + 'g'
             if prev_is_nasal_pulli:
-                cons_latin = 'g'
+                cons_latin = 'g'  # ங் + க -> ngg / ng + ga -> nga
             elif prev_is_stop_pulli:
-                cons_latin = 'k'  # Geminate: க் + க -> kk
+                cons_latin = 'k'  # க் + க -> kk
             elif prev_is_vowel:
                 cons_latin = 'g'  # Intervocalic: Agathiyar, Murugan
             else:
@@ -109,7 +107,7 @@ def transliterate_token(token: str) -> str:
         # Rule B: Palatal /c/ (ச)
         elif base_cons == 'ச':
             if prev_is_nasal_pulli:
-                cons_latin = 'j'  # ஞ் + ச -> nj
+                cons_latin = 'j'  # ஞ் + ச -> nja / nja
             elif prev_is_stop_pulli:
                 cons_latin = 'ch' # ச் + ச -> cch / ch
             elif prev_is_vowel:
@@ -131,7 +129,7 @@ def transliterate_token(token: str) -> str:
         # Rule D: Dental /t/ (த)
         elif base_cons == 'த':
             if prev_is_nasal_pulli:
-                cons_latin = ''   # ந் + த -> already handled as 'ndh'
+                cons_latin = 'dh' # ந் + த -> ndha
             elif prev_is_stop_pulli:
                 cons_latin = 'th' # த் + த -> tth
             elif i == 0 and vowel_latin in ['e', 'ai']:

@@ -36,19 +36,12 @@ VOWEL_SIGNS = {
 
 def split_tamil_letters(text: str) -> list[str]:
     """
-    Splits Tamil text into individual phonetic graphemes/syllables:
-    - Pure vowels: 'அ', 'ஆ', etc.
-    - Pure consonants (with pulli): 'க்', 'ங்', 'த்', etc.
-    - Syllabic consonants: 'க', 'கா', 'கி', 'கீ', etc.
-    - Grantha ligatures: 'ஸ்ரீ'
-    - Non-Tamil characters (spaces, punctuation, digits, ASCII).
+    Splits Tamil text into individual phonetic graphemes/syllables.
+    Preserves non-Tamil characters as-is.
     """
     if not text:
         return []
         
-    # Pre-unify Grantha Sri
-    text = text.replace('ஸ்ரீ', ' ஸ்ரீ ')
-    
     letters = []
     i = 0
     n = len(text)
@@ -56,24 +49,25 @@ def split_tamil_letters(text: str) -> list[str]:
     while i < n:
         char = text[i]
         
-        # Check if Tamil character
+        # Check for Grantha Sri (ஸ + ் + ர + ீ)
+        if text[i:i+4] == 'ஸ்ரீ':
+            letters.append('ஸ்ரீ')
+            i += 4
+            continue
+            
+        # Check if Tamil Unicode block
         if '\u0B80' <= char <= '\u0BFF':
-            # Check for pure vowel or aytham
             if char in UYIR or char in AYTHAM:
                 letters.append(char)
                 i += 1
             elif char in MEI_BASES or char in ['ஜ', 'ஷ', 'ஸ', 'ஹ']:
-                # Consonant: check next character for pulli or vowel sign
                 if i + 1 < n and text[i+1] == PULLI:
-                    # Pure consonant with pulli (மெய்யெழுத்து)
                     letters.append(text[i:i+2])
                     i += 2
                 elif i + 1 < n and text[i+1] in VOWEL_SIGNS:
-                    # Consonant + vowel sign (உயிர்மெய்)
                     letters.append(text[i:i+2])
                     i += 2
                 else:
-                    # Inherent 'a' consonant
                     letters.append(char)
                     i += 1
             else:
